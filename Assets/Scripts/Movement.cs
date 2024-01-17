@@ -1,9 +1,16 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Movement : MonoBehaviour
 {
+    public static Movement Instance {  get; private set; }
+
+    public event EventHandler OnGamePaused;
+    public event EventHandler OnGameUnpaused;
+    
+
     Rigidbody rb;
     AudioSource audioSource;
     [SerializeField] float thruster = 1000f;
@@ -12,9 +19,20 @@ public class Movement : MonoBehaviour
     [SerializeField] ParticleSystem boosterparticles;
     [SerializeField] ParticleSystem Lbooster;
     [SerializeField] ParticleSystem Rbooster;
+
+    private bool isGamePaused = false;
+
+
+
+
     // Start is called before the first frame update
+    private void Awake()
+    {
+        Instance = this;
+    }
     void Start()
     {
+        
         rb = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
     }
@@ -24,7 +42,34 @@ public class Movement : MonoBehaviour
     {
         thrust();
         rotating();
+        TogglePauseKeyboard();
     }
+
+    private void TogglePauseKeyboard()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+        }
+        }
+    public void TogglePause()
+    {
+        
+        
+            isGamePaused = !isGamePaused;
+            if (isGamePaused)
+            {
+                Time.timeScale = 0f;
+                OnGamePaused?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                Time.timeScale = 1f;
+                OnGameUnpaused?.Invoke(this, EventArgs.Empty);
+            }
+        
+    }
+
     void thrust()
     {
         if (Input.GetKey(KeyCode.Space))

@@ -4,6 +4,11 @@ using UnityEngine.SceneManagement;
 
 public class ColliderHandler : MonoBehaviour
 {
+    public static ColliderHandler Instance{ get; private set; }
+
+    public event EventHandler OnGameOver;
+    public event EventHandler OnGameCompleted;
+
     [SerializeField] float loadDelay = 1f;
     [SerializeField] AudioClip success;
     [SerializeField] AudioClip crashed;
@@ -13,6 +18,11 @@ public class ColliderHandler : MonoBehaviour
 
     AudioSource audioSource;
     bool isTransitioning;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
@@ -32,6 +42,9 @@ public class ColliderHandler : MonoBehaviour
             case "Finish":
                 StartSuccessSequence();
                 break ;
+            case "Final":
+                GameCompleted();
+                break;
             default:
                 StartCrashSequence();
                 break;
@@ -55,7 +68,17 @@ public class ColliderHandler : MonoBehaviour
         GetComponent<Movement>().enabled = false;
         audioSource.PlayOneShot(crashed);
         crashedparticle.Play();
-        Invoke("ReloadLevel", loadDelay);
+        OnGameOver?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void GameCompleted()
+    {
+        isTransitioning = true;
+        audioSource.Stop();
+        GetComponent<Movement>().enabled = false;
+        audioSource.PlayOneShot(success);
+        successparticle.Play();
+        OnGameCompleted?.Invoke(this, EventArgs.Empty);
     }
 
     private void LoadNextLevel()
@@ -67,11 +90,6 @@ public class ColliderHandler : MonoBehaviour
             nextsceneIndex = 0;
         }
         SceneManager.LoadScene(nextsceneIndex);
-    }
-    private void ReloadLevel()
-    {
-        int currentscene = SceneManager.GetActiveScene().buildIndex;
-        SceneManager.LoadScene(currentscene);
     }
     void volumControl()
     {
